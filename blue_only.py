@@ -1,41 +1,34 @@
+import os
+import time
+import pathlib
+import math
+import copy
+
 import cv2
 import numpy as np
-import os
-import copy
-import math
 from pymavlink import mavutil
-import time
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
+secret_key=""
+LOG_DIRECTORY_PATH = pathlib.Path("logs")
+SAVE_PREFIX = str(pathlib.Path(LOG_DIRECTORY_PATH, "image_" + str(int(time.time())) + "_"))
 
-def current_milli_time():
-    return round(time.time() * 1000)
+cam = PiCamera()
+rawCapture = PiRGBArray(cam)
+time.sleep(0.1)
 
-
-cam = cv2.VideoCapture(0)
 kernel = np.ones((2, 2), np.uint8)
 FOV_X = 62.2  # Camera horizontal field of view
 FOV_Y = 48.8  # Camera vertical field of view
 
-vehicle = mavutil.mavlink_connection('udpin:172.25.160.1:14551')
+vehicle = mavutil.mavlink_connection('udpin:localhost:14551')
+# vehicle = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
 vehicle.wait_heartbeat()
 print("Heartbeat from system (system %u component %u)" % (vehicle.target_system, vehicle.target_component))
 
-"""
-def send_land_message(x_rad, y_rad, z_dist):
-    msg = vehicle.message_factory.landing_target_encode(
-        0,          # time since system boot, not used
-        0,          # target num, not used
-        mavutil.mavlink.MAV_FRAME_BODY_NED, # frame, not used
-        x_rad,
-        y_rad,
-        z_dist,          # distance, in meters
-        0,          # Target x-axis size, in radians
-        0           # Target y-axis size, in radians
-    )
-    vehicle.send_mavlink(msg)
-    vehicle.flush()
-"""
-
+def current_milli_time():
+    return round(time.time() * 1000)
 
 def is_contour_circular(contour):
     perimeter = cv2.arcLength(contour, True)
@@ -48,12 +41,10 @@ def is_contour_circular(contour):
     circularity = 4 * np.pi * (area / (perimeter * perimeter))
     return circularity > 0.8  # Adjust this threshold as needed
 
-
 def is_contour_large_enough(contour, min_diameter):
     (x, y), radius = cv2.minEnclosingCircle(contour)
     diameter = radius * 2
     return diameter >= min_diameter
-
 
 def calc_target_distance(height_agl, x_rad, y_rad):
     x_deg = x_rad * 180 / math.pi
@@ -65,10 +56,6 @@ def calc_target_distance(height_agl, x_rad, y_rad):
     target_to_vehicle_dist = math.sqrt(math.pow(ground_hyp, 2) + math.pow(height_agl, 2))
     print("Distance from vehicle to target (m): ", target_to_vehicle_dist)
     return target_to_vehicle_dist
-
-
-# image = cv2.imread('grass2.png')
-# im_h, im_w, c = image.shape
 
 pos_message = vehicle.mav.command_long_encode(
     vehicle.target_system,  # Target system ID
@@ -84,13 +71,15 @@ pos_message = vehicle.mav.command_long_encode(
     0  # param6 (unused)
 )
 
+vehicle.setup_signing(secret_key, True, None, int(time.time()), 0)
 vehicle.mav.send(pos_message)
 
 altitude_m = 0
 loop_counter = 0
 last_time = current_milli_time()
 while True:
-    return_value, image = cam.read()
+    cam.capture(rawCapture, format="bgr")
+    image = rawCapture.array
     im_h, im_w, c = image.shape
     print("Input image width: " + str(im_w))
     print("Input image height: " + str(im_h))
@@ -103,14 +92,10 @@ while True:
         print("Altitude AGL: ", altitude_m)
     except:
         print('No GLOBAL_POSITION_INT message received')
-    # return_value, image = cam.read()
-    # Isolating blue in original image and creating mask
-    # hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    # lower_blue = np.array([100, 50, 50])
-    # upper_blue = np.array([135, 255, 255])
-    # mask = cv2.inRange(hsv, lower_blue, upper_blue)
-    # mask_dilation = cv2.dilate(mask, kernel, iterations=1)
-    # res = cv2.bitwise_and(image, image, mask=mask_dilation)
+
+    # log image every 30 loops
+    if(loop_counter % 30 == 0):
+        cv2.imwrite(SAVE_PREFIX + str(loop_counter) + ".png", image)
 
     # Finding contours in original image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -140,7 +125,6 @@ while True:
             angle_x = (x_center - im_w / 2) * (FOV_X * (math.pi / 180)) / im_w
             angle_y = (y_center - im_h / 2) * (FOV_Y * (math.pi / 180)) / im_h
             cv2.circle(rect_image, (int(x_center), int(y_center)), 2, (0, 0, 255), 2)
-            # print(x, y, w, h)
             print("X Angle (rad): ", angle_x)
             print("Y Angle (rad): ", angle_y)
             target_dist = calc_target_distance(altitude_m, angle_x, angle_y)
@@ -148,7 +132,6 @@ while True:
                                             0)
 
         cv2.imshow("Binary", im_dilation)
-        # cv2.imshow('Mask', mask_dilation)
         cv2.imshow('Mask Contours', rect_image)
         cv2.waitKey(10)
         loop_counter += 1
