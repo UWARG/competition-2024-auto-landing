@@ -1,0 +1,6 @@
+future==1.0.0
+lxml==5.1.0
+numpy==1.24.4
+opencv-python==4.9.0.80
+pymavlink==2.4.41
+picamera
