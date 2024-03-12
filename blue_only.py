@@ -1,3 +1,6 @@
+"""
+Auto-landing solution for 2024 competition.
+"""
 import os
 import time
 import pathlib
@@ -6,16 +9,21 @@ import copy
 
 import cv2
 import numpy as np
+from dotenv import load_dotenv
 from pymavlink import mavutil
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+from picamera2 import PiCamera2, Preview
 
-secret_key=""
+
+load_dotenv(".key")
+secret_key = os.getenv("KEY")
 LOG_DIRECTORY_PATH = pathlib.Path("logs")
 SAVE_PREFIX = str(pathlib.Path(LOG_DIRECTORY_PATH, "image_" + str(int(time.time())) + "_"))
 
-cam = PiCamera()
-rawCapture = PiRGBArray(cam)
+cam = PiCamera2()
+camera_config = cam.create_preview_configuration(main={"size": (640, 480)})
+cam.configure(camera_config)
+cam.start_preview(Preview.QTGL) # comment to disable preview
+cam.start()
 time.sleep(0.1)
 
 kernel = np.ones((2, 2), np.uint8)
@@ -78,8 +86,7 @@ altitude_m = 0
 loop_counter = 0
 last_time = current_milli_time()
 while True:
-    cam.capture(rawCapture, format="bgr")
-    image = rawCapture.array
+    image = cam.capture_array()
     im_h, im_w, c = image.shape
     print("Input image width: " + str(im_w))
     print("Input image height: " + str(im_h))
