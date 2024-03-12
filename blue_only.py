@@ -1,5 +1,5 @@
 """
-Auto-landing solution for 2024 competition.
+Auto-landing script for AEAC 2024 competition.
 """
 import os
 import time
@@ -9,6 +9,7 @@ import copy
 
 import cv2
 import numpy as np
+
 from dotenv import load_dotenv
 from pymavlink import mavutil
 from picamera2 import PiCamera2, Preview
