@@ -22,7 +22,7 @@ SAVE_PREFIX = str(pathlib.Path(LOG_DIRECTORY_PATH, "image_" + str(int(time.time(
 cam = PiCamera2()
 camera_config = cam.create_preview_configuration(main={"size": (640, 480)})
 cam.configure(camera_config)
-cam.start_preview(Preview.QTGL) # comment to disable preview
+cam.start_preview(Preview.QTGL) # Comment this out to disable preview.
 cam.start()
 time.sleep(0.1)
 
