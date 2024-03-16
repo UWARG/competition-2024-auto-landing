@@ -83,7 +83,6 @@ def my_allow_unsigned_callback(self,msgId):
     return False
 
 secret_key = bytearray(secret_key, 'utf-8' )
-print(secret_key)
 vehicle.setup_signing(secret_key, True, my_allow_unsigned_callback, int(time.time()), 0)
 vehicle.mav.send(pos_message)
 
@@ -145,9 +144,9 @@ while True:
             vehicle.mav.landing_target_send(0, 0, mavutil.mavlink.MAV_FRAME_BODY_NED, angle_x, angle_y, target_dist, 0,
                                             0)
 
-        cv2.imshow("Binary", im_dilation)
-        cv2.imshow('Mask Contours', rect_image)
-        cv2.waitKey(10)
+        # cv2.imshow("Binary", im_dilation)
+        # cv2.imshow('Mask Contours', rect_image)
+        # cv2.waitKey(10)
         loop_counter += 1
         if current_milli_time() - last_time > 1000:
             print("FPS:", loop_counter)
