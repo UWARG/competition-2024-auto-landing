@@ -111,8 +111,8 @@ while True:
 
     # Finding contours in original image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    thresh = 180
-    im_bw = cv2.threshold(gray_image, thresh, 255, cv2.THRESH_BINARY)[1]
+    threshold = 180
+    im_bw = cv2.threshold(gray_image, threshold, 255, cv2.THRESH_BINARY)[1]
     im_dilation = cv2.dilate(im_bw, kernel, iterations=1)
     contours, hierarchy = cv2.findContours(im_dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if len(contours) != 0:

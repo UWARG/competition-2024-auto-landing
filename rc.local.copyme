@@ -1,3 +1,9 @@
+#!/bin/bash
+# Copy the following contents to the end of rc.local:
+
+# AEAC 2024 Auto-landing
+TIME="$(date +%s)"
+touch /home/warg/record_$TIME.log  # To confirm script has run
 cd /home/warg/competition-2024-auto-landing/  # Update to actual path
 source venv/bin/activate
 python blue_only.py
