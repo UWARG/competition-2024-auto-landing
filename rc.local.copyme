@@ -1,5 +1,7 @@
 #!/bin/bash
-# Copy the following contents to the end of rc.local:
+
+# If previous lines contain python codes, add an ampersand at the end, 
+# and copy the following contents to the end of rc.local:
 
 # AEAC 2024 Auto-landing
 TIME="$(date +%s)"

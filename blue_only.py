@@ -152,7 +152,7 @@ while True:
             print("FPS:", loop_counter)
             loop_counter = 0
             last_time = current_milli_time()
-        if current_milli_time() - last_image_time > 100:
+        if current_milli_time() - last_image_time > 10000:
             if pad_detected:
                 print("Bounding Box Image Write")
                 cv2.imwrite(SAVE_PREFIX + "_" + str(datetime.now()) + ".png", rect_image)
