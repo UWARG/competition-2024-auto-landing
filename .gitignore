@@ -1,2 +1,13 @@
+# IDEs
+.idea/
+.vscode/
+
+# Python
+__pycache__/
 venv/
+
+# Logging
+logs/
+
+# Credentials
 .key
