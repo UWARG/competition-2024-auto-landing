@@ -30,8 +30,14 @@ FOV_Y = 48.8
 CONTOUR_MINIMUM = 0.8
 
 parser = argparse.ArgumentParser(description="AEAC 2024 Auto-landing script")
-parser.add_argument("--method", help="Method for selecting landing pads", choices=['contour', 'yolo'], default="contour")
+parser.add_argument(
+    "--method",
+    help="Method for selecting landing pads",
+    choices=["contour", "yolo"],
+    default="contour",
+)
 args = parser.parse_args()
+
 
 def current_milli_time() -> int:
     """
@@ -132,7 +138,7 @@ def main() -> int:
     last_time = current_milli_time()
     last_image_time = current_milli_time()
 
-    if args.method == 'yolo':
+    if args.method == "yolo":
         yolo_model = yolo_decision.DetectLandingPad("cpu", 0.5, "models/best-2n.pt")
 
     while True:
@@ -161,13 +167,15 @@ def main() -> int:
         found_coordindates = False
         x, y, w, h = 0, 0, 0, 0
 
-        if args.method == 'contour':
+        if args.method == "contour":
             # Finding contours in original image
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             threshold = 180
             im_bw = cv2.threshold(gray_image, threshold, 255, cv2.THRESH_BINARY)[1]
             im_dilation = cv2.dilate(im_bw, kernel, iterations=1)
-            contours, hierarchy = cv2.findContours(im_dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(
+                im_dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
             if len(contours) == 0:
                 continue
 
@@ -240,6 +248,7 @@ def main() -> int:
             last_image_time = current_milli_time()
 
     return 0
+
 
 if __name__ == "__main__":
     result_main = main()

@@ -5,6 +5,7 @@ Landing Pad Detection Class using 2023 YOLO model
 import ultralytics
 import numpy as np
 
+
 class Detection:
     """
     A detected object in image space.
@@ -57,9 +58,10 @@ class Detection:
         """
         return f"cls: {self.label}, conf: {self.confidence}, bounds: {self.x_1} {self.y_1} {self.x_2} {self.y_2}"
 
+
 class DetectLandingPad:
     """
-    Contains 2023 YOLOv8 model for prediction. 
+    Contains 2023 YOLOv8 model for prediction.
     """
 
     def __init__(self, device: "str | int", conf: int, model_path: str) -> None:
@@ -115,4 +117,3 @@ class DetectLandingPad:
 
         best_landing_pad = min(detections, key=lambda pad: pad.confidence)
         return best_landing_pad
-    
