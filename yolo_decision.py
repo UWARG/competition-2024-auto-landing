@@ -108,7 +108,7 @@ class DetectLandingPad:
 
         return True, detections
 
-    def find_best_pad(self, detections: list[Detection]) -> "Detection | None":
+    def find_best_pad(self, detections: "list[Detection]") -> "Detection | None":
         """
         Determine best landing pad to land on based on confidence.
         """
