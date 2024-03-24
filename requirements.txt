@@ -1,6 +1,10 @@
-future==1.0.0
-lxml==5.1.0
-numpy==1.24.4
-opencv-python==4.9.0.80
-pymavlink==2.4.41
+# Packages listed in alphabetical order
+numpy
+opencv-python
+pymavlink
 python-dotenv
+
+# Linters and formatters are explicitly versioned
+black==24.2.0
+flake8-annotations==3.0.1
+pylint==3.0.3
