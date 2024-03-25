@@ -103,14 +103,18 @@ class DetectLandingPad:
             label = int(boxes.cls[i])
             confidence = float(boxes.conf[i])
             result, detection = Detection.create(bounds, label, confidence)
-            if result and detection:
-                detections.append(detection)
+            if not result:
+                return False, None
+
+            detections.append(detection)
 
         return True, detections
 
     def find_best_pad(self, detections: "list[Detection]") -> "Detection | None":
         """
         Determine best landing pad to land on based on confidence.
+
+        detections: list of landing pad detections
         """
         if len(detections) == 0:
             return None

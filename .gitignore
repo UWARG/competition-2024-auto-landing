@@ -13,4 +13,5 @@ logs/
 .key
 
 # Models
-.pt
+models/
+*.pt
