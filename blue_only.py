@@ -32,15 +32,6 @@ CONTOUR_MINIMUM = 0.8
 
 CONFIG_FILE_PATH = pathlib.Path("config.yml")
 
-parser = argparse.ArgumentParser(description="AEAC 2024 Auto-landing script")
-parser.add_argument(
-    "--method",
-    help="Method for selecting landing pads",
-    choices=["contour", "yolo"],
-    default="contour",
-)
-args = parser.parse_args()
-
 
 def current_milli_time() -> int:
     """
@@ -366,6 +357,15 @@ def main() -> int:
         return -1
     except IOError as exc:
         print(f"Error when opening file: {exc}")
+
+    parser = argparse.ArgumentParser(description="AEAC 2024 Auto-landing script")
+    parser.add_argument(
+        "--method",
+        help="Method for selecting landing pads",
+        choices=["contour", "yolo"],
+        default="contour",
+    )
+    args = parser.parse_args()
 
     if args.method == "contour":
         return run_with_contours()
