@@ -1,0 +1,4 @@
+yolo_detect_target:
+  model_path: "models/best-2n.pt"
+  device: "cpu"
+  confidence: 0.5

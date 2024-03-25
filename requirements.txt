@@ -3,6 +3,7 @@ numpy
 opencv-python
 pymavlink
 python-dotenv
+ultralytics
 
 # Linters and formatters are explicitly versioned
 black==24.2.0
