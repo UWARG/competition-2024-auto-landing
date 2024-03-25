@@ -229,6 +229,7 @@ def run_with_contours() -> int:
 
     return 0
 
+
 def yolo_detect(model_device: "str | int", detect_confidence: int, model_path: str) -> int:
     """
     Run script with YOLOv8 model.
@@ -348,6 +349,7 @@ def yolo_detect(model_device: "str | int", detect_confidence: int, model_path: s
 
     return 0
 
+
 def main() -> int:
     """
     Main function.
@@ -373,11 +375,9 @@ def main() -> int:
         detect_confidence = config["yolo_detect_target"]["confidence"]
         model_path = config["yolo_detect_target"]["model_path"]
 
-        return yolo_detect(
-            model_device,
-            detect_confidence,
-            model_path
-        )
+        return yolo_detect(model_device, detect_confidence, model_path)
+
+    return -1
 
 
 if __name__ == "__main__":
