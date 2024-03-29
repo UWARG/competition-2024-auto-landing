@@ -11,3 +11,7 @@ logs/
 
 # Credentials
 .key
+
+# Models
+models/
+*.pt
