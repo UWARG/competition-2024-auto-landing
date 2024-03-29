@@ -91,7 +91,7 @@ def my_allow_unsigned_callback(self: object, message_id: int) -> bool:
     return message_id == pymavlink.mavutil.mavlink.MAVLINK_MSG_ID_RADIO_STATUS
 
 
-def detect_landing_pads_contour(image: np.ndarray) -> "None | tuple":
+def detect_landing_pads_contour(image: np.ndarray) -> "tuple[bool, tuple | None]":
     """
     Detect landing pads using contours.
 
@@ -106,7 +106,7 @@ def detect_landing_pads_contour(image: np.ndarray) -> "None | tuple":
     contours, hierarchy = cv2.findContours(im_dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     if len(contours) == 0:
-        return None
+        return False, None
 
     contours_with_children = set(i for i, hier in enumerate(hierarchy[0]) if hier[2] != -1)
     parent_circular_contours = [
@@ -121,12 +121,12 @@ def detect_landing_pads_contour(image: np.ndarray) -> "None | tuple":
     largest_contour = max(parent_circular_contours, key=cv2.contourArea, default=None)
 
     if not largest_contour:
-        return None
+        return False, None
 
-    return tuple(cv2.boundingRect(largest_contour))
+    return True, tuple(cv2.boundingRect(largest_contour))
 
 
-def detect_landing_pads_yolo(image: np.ndarray, config: dict) -> "None | tuple":
+def detect_landing_pads_yolo(image: np.ndarray, config: dict) -> "tuple[bool, tuple | None]":
     """
     Detect landing pads using YOLO model.
 
@@ -140,17 +140,17 @@ def detect_landing_pads_yolo(image: np.ndarray, config: dict) -> "None | tuple":
 
     result, detections = yolo_model.get_landing_pads(image)
     if not result:
-        return None
+        return False, None
 
     best_landing_pad = yolo_model.find_best_pad(detections)
     if not best_landing_pad:
-        return None
+        return False, None
 
     x, y = best_landing_pad.x_1, best_landing_pad.y_1
     w = best_landing_pad.x_2 - best_landing_pad.x_1
     h = best_landing_pad.y_2 - best_landing_pad.y_1
 
-    return (x, y, w, h)
+    return True, (x, y, w, h)
 
 
 def main() -> int:
@@ -215,7 +215,6 @@ def main() -> int:
     last_image_time = current_milli_time()
 
     while True:
-        is_pad_detected = False
         result, image = cam.read()
         if not result:
             print("ERROR: Could not get image from camera")
@@ -237,46 +236,49 @@ def main() -> int:
             continue
 
         if args.method == "contour":
-            bounding_box = detect_landing_pads_contour(image)
+            bounding_result, bounding_box = detect_landing_pads_contour(image)
         elif args.method == "yolo":
-            bounding_box = detect_landing_pads_yolo(image, config)
-
-        if bounding_box is not None:
-            x, y, w, h = bounding_box
-            rect_image = copy.deepcopy(image)
-            cv2.rectangle(rect_image, (int(x), int(y)), (int(x + w), int(y + h)), (0, 255, 0), 2)
-            x_center = x + w / 2
-            y_center = y + h / 2
-            angle_x = (x_center - im_w / 2) * (FOV_X * (math.pi / 180)) / im_w
-            angle_y = (y_center - im_h / 2) * (FOV_Y * (math.pi / 180)) / im_h
-            cv2.circle(rect_image, (int(x_center), int(y_center)), 2, (0, 0, 255), 2)
-            print("X Angle (rad): ", angle_x)
-            print("Y Angle (rad): ", angle_y)
-            target_dist = calc_target_distance(altitude_m, angle_x, angle_y)
-            is_pad_detected = True
-            vehicle.mav.landing_target_send(
-                0,
-                0,
-                pymavlink.mavutil.mavlink.MAV_FRAME_BODY_NED,
-                angle_x,
-                angle_y,
-                target_dist,
-                0,
-                0,
-            )
+            bounding_result, bounding_box = detect_landing_pads_yolo(image, config)
 
         loop_counter += 1
         if current_milli_time() - last_time > 1000:
             print("FPS:", loop_counter)
             loop_counter = 0
             last_time = current_milli_time()
-        if current_milli_time() - last_image_time > 100:
-            if is_pad_detected:
-                print("Bounding Box Image Write")
-                cv2.imwrite(SAVE_PREFIX + "_" + str(time.time()) + ".png", rect_image)
-            else:
+
+        if not bounding_result:
+            # Print plain image
+            if current_milli_time() - last_image_time > 100:
                 print("Plain Image Write")
                 cv2.imwrite(SAVE_PREFIX + "_" + str(time.time()) + ".png", image)
+                last_image_time = current_milli_time()
+            continue
+
+        x, y, w, h = bounding_box
+        rect_image = copy.deepcopy(image)
+        cv2.rectangle(rect_image, (int(x), int(y)), (int(x + w), int(y + h)), (0, 255, 0), 2)
+        x_center = x + w / 2
+        y_center = y + h / 2
+        angle_x = (x_center - im_w / 2) * (FOV_X * (math.pi / 180)) / im_w
+        angle_y = (y_center - im_h / 2) * (FOV_Y * (math.pi / 180)) / im_h
+        cv2.circle(rect_image, (int(x_center), int(y_center)), 2, (0, 0, 255), 2)
+        print("X Angle (rad): ", angle_x)
+        print("Y Angle (rad): ", angle_y)
+        target_dist = calc_target_distance(altitude_m, angle_x, angle_y)
+        vehicle.mav.landing_target_send(
+            0,
+            0,
+            pymavlink.mavutil.mavlink.MAV_FRAME_BODY_NED,
+            angle_x,
+            angle_y,
+            target_dist,
+            0,
+            0,
+        )
+
+        if current_milli_time() - last_image_time > 100:
+            print("Bounding Box Image Write")
+            cv2.imwrite(SAVE_PREFIX + "_" + str(time.time()) + ".png", rect_image)
             last_image_time = current_milli_time()
 
     return 0
