@@ -16,7 +16,7 @@ import yaml
 import cv2
 import dotenv
 import numpy as np
-import pymavlink
+from pymavlink import mavutil
 
 import yolo_decision
 
@@ -70,7 +70,7 @@ def is_contour_large_enough(contour: np.ndarray, min_diameter: float) -> bool:
 
 def calc_target_distance(height_agl: float, x_rad: float, y_rad: float) -> float:
     """
-    Get the horizontal distance TODO
+    Get the horizontal distance.
     """
     x_ground_dist_m = math.tan(x_rad) * height_agl
     y_ground_dist_m = math.tan(y_rad) * height_agl
@@ -88,7 +88,7 @@ def my_allow_unsigned_callback(self: object, message_id: int) -> bool:
     Specify which messages to accept.
     """
     # Allow radio status messages
-    return message_id == pymavlink.mavutil.mavlink.MAVLINK_MSG_ID_RADIO_STATUS
+    return message_id == mavutil.mavlink.MAVLINK_MSG_ID_RADIO_STATUS
 
 
 def detect_landing_pads_contour(image: np.ndarray) -> "tuple[bool, tuple | None]":
@@ -184,8 +184,8 @@ def main() -> int:
 
     cam = cv2.VideoCapture(CAMERA)
 
-    vehicle = pymavlink.mavutil.mavlink_connection("tcp:localhost:14550")
-    # vehicle = pymavlink.mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
+    vehicle = mavutil.mavlink_connection("tcp:localhost:14550")
+    # vehicle = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
     vehicle.wait_heartbeat()
     print(
         f"Heartbeat from system (system {vehicle.target_system} component {vehicle.target_component})"
@@ -194,7 +194,7 @@ def main() -> int:
     pos_message = vehicle.mav.command_long_encode(
         vehicle.target_system,  # Target system ID
         vehicle.target_component,  # Target component ID
-        pymavlink.mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
+        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         33,  # param1: Message ID to be streamed
         250000,  # param2: Interval in microseconds
@@ -268,7 +268,7 @@ def main() -> int:
         vehicle.mav.landing_target_send(
             0,
             0,
-            pymavlink.mavutil.mavlink.MAV_FRAME_BODY_NED,
+            mavutil.mavlink.MAV_FRAME_BODY_NED,
             angle_x,
             angle_y,
             target_dist,
